@@ -83,6 +83,15 @@
     background: rgba(255,255,255,0.85); top: 15%; left: 15%;
   }
 
+  /* draggable sticker (the eyes follow iba) */
+  #sticker {
+    position: absolute; z-index: 5; width: clamp(120px, 32vmin, 320px);
+    transform: translate(-50%,-50%);
+    cursor: grab; touch-action: none; user-select: none; -webkit-user-drag: none;
+    filter: drop-shadow(0 10px 22px rgba(0,0,0,0.6));
+  }
+  #sticker.dragging { cursor: grabbing; filter: drop-shadow(0 16px 30px rgba(0,0,0,0.7)); }
+
   #pwBox {
     flex: 0 0 auto; z-index: 4; display: flex; flex-direction: column; align-items: center;
     padding: 26px 16px calc(80px + env(safe-area-inset-bottom)); /* leaves room for audio bar */
@@ -160,6 +169,7 @@
   <img id="bgImg" src="imnotsingleanymore.png" alt="">
   <div class="googly" id="eyeL"><div class="pupil" id="pupilL"></div></div>
   <div class="googly" id="eyeR"><div class="pupil" id="pupilR"></div></div>
+  <img id="sticker" src="ibaaaa.webp" alt="" draggable="false">
 
   <div id="pwBox">
     <div class="gift">
@@ -199,6 +209,9 @@
     right: { x: 0.532, y: 0.170 },
     size:  0.075   /* eye diameter as fraction of image width */
   };
+
+  /* Where the eyes look on the sticker */
+  var STICKER_FACE_Y = 0.28;   /* fraction of sticker height from its top */
 
   var $ = function (id) { return document.getElementById(id); };
   var video = $('video'), audio = $('audio');
@@ -285,6 +298,7 @@
     videoStage.classList.remove('active');
     picStage.classList.add('active');
     layoutPicStage();
+    placeStickerInitial();
     audio.play().catch(function () {});
     showAudioBar();
   });
@@ -321,11 +335,12 @@
       p.style.width = pd + 'px'; p.style.height = pd + 'px';
       p.style.marginLeft = (-pd / 2) + 'px'; p.style.marginTop = (-pd / 2) + 'px';
     });
+    lookAtSticker();                      /* keep eyes on her after re-layout */
   }
   bgImg.addEventListener('load', layoutPicStage);
   window.addEventListener('resize', layoutPicStage);
 
-  /* Googly pupils follow pointer/touch */
+  /* Googly pupils look toward a point */
   function movePupils(px, py) {
     [['l', pupilL], ['r', pupilR]].forEach(function (cfg) {
       var c = eyeCenters[cfg[0]], p = cfg[1];
@@ -336,15 +351,54 @@
       p.style.transform = 'translate(' + (dx / dist * t) + 'px,' + (dy / dist * t) + 'px)';
     });
   }
-  document.addEventListener('mousemove', function (e) {
-    if (picStage.classList.contains('active')) movePupils(e.clientX, e.clientY);
+
+  /* ---------- DRAGGABLE STICKER (the eyes follow her) ---------- */
+  var sticker = $('sticker');
+  var stickerPos = { x: -1, y: -1 };      /* center of the sticker */
+
+  function setSticker(x, y) {
+    var r = sticker.getBoundingClientRect();
+    var hw = (r.width || 100) / 2, hh = (r.height || 100) / 2;
+    /* keep at least a third of the sticker on screen */
+    x = Math.max(-hw / 3 + hw, Math.min(window.innerWidth  - hw + hw / 3, x));
+    y = Math.max(hh * 0.5,     Math.min(window.innerHeight - hh * 0.5,  y));
+    stickerPos.x = x; stickerPos.y = y;
+    sticker.style.left = x + 'px';
+    sticker.style.top  = y + 'px';
+    lookAtSticker();
+  }
+
+  function lookAtSticker() {
+    if (stickerPos.x < 0) return;
+    var r = sticker.getBoundingClientRect();
+    /* aim at her face (upper part of the sticker), not its center */
+    movePupils(stickerPos.x, stickerPos.y - r.height * (0.5 - STICKER_FACE_Y));
+  }
+
+  function placeStickerInitial() {
+    if (stickerPos.x >= 0) return;        /* only once */
+    setSticker(window.innerWidth * 0.5, window.innerHeight * 0.5);
+  }
+  sticker.addEventListener('load', function () {
+    if (picStage.classList.contains('active')) placeStickerInitial();
   });
-  document.addEventListener('touchmove', function (e) {
-    if (picStage.classList.contains('active') && e.touches[0]) movePupils(e.touches[0].clientX, e.touches[0].clientY);
-  }, { passive: true });
-  document.addEventListener('touchstart', function (e) {
-    if (picStage.classList.contains('active') && e.touches[0]) movePupils(e.touches[0].clientX, e.touches[0].clientY);
-  }, { passive: true });
+  sticker.addEventListener('error', function () { sticker.style.display = 'none'; });
+
+  /* drag with mouse or touch (pointer events cover both) */
+  var dragging = false;
+  sticker.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    dragging = true;
+    sticker.classList.add('dragging');
+    sticker.setPointerCapture(e.pointerId);
+    setSticker(e.clientX, e.clientY);
+  });
+  sticker.addEventListener('pointermove', function (e) {
+    if (dragging) setSticker(e.clientX, e.clientY);
+  });
+  function endDrag() { dragging = false; sticker.classList.remove('dragging'); }
+  sticker.addEventListener('pointerup', endDrag);
+  sticker.addEventListener('pointercancel', endDrag);
 
   /* ---------- PASSWORD ---------- */
   var wrongMsgs = [
