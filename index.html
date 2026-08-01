@@ -30,7 +30,7 @@
 
   /* ---------- shared control bar (video + audio) ---------- */
   .controls {
-    position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
     display: flex; align-items: center; gap: 12px;
     padding: 14px 18px calc(14px + env(safe-area-inset-bottom));
     background: linear-gradient(transparent, rgba(0,0,0,0.75));
@@ -134,21 +134,121 @@
     80% { transform: translate(-47%,-50%) rotate(3deg); }
   }
 
-  /* ---------- STAGE 3: CONGRATS ---------- */
+  /* ---------- STAGE 3: CONGRATS + VOUCHER ---------- */
   #congratsStage {
     background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
     background-size: 300% 300%; animation: bgShift 8s ease infinite;
-    display: none; align-items: center; justify-content: center;
+    overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
   }
-  #congratsStage.active { display: flex; }
+  #congratsStage.active { display: block; }
   @keyframes bgShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+  #congratsInner {
+    position: relative; z-index: 2; min-height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    padding: 7vh 16px calc(110px + env(safe-area-inset-bottom));
+  }
   #congratsText {
-    color: #fff; text-align: center; font-size: clamp(28px, 6vw, 64px); font-weight: 800;
-    padding: 0 6vw; text-shadow: 0 6px 30px rgba(0,0,0,0.5); z-index: 2;
+    color: #fff; text-align: center; font-size: clamp(26px, 5.4vw, 58px); font-weight: 800;
+    padding: 0 2vw; text-shadow: 0 6px 30px rgba(0,0,0,0.5);
     animation: pop 0.8s cubic-bezier(.2,1.6,.4,1);
   }
   @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+  #scrollNudge {
+    margin-top: 22px; color: #fff; font-size: 14px; letter-spacing: .06em; text-transform: uppercase;
+    text-shadow: 0 3px 12px rgba(0,0,0,.6); animation: bob 1.8s ease-in-out infinite;
+  }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
   #confettiCanvas { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+
+  /* ----- the voucher ticket ----- */
+  #voucher {
+    position: relative; margin-top: 42px; width: min(680px, 94vw);
+    background: repeating-linear-gradient(45deg, #fffaf0 0 22px, #fff6e2 22px 44px);
+    color: #2b1a10; border-radius: 20px;
+    box-shadow: 0 26px 70px rgba(0,0,0,.55), 0 0 0 3px #ffb703, 0 0 0 9px rgba(255,255,255,.18);
+    padding: 30px clamp(18px, 4vw, 42px) 26px;
+    animation: dealIn 1s cubic-bezier(.2,1.3,.4,1) .4s both;
+    transform-origin: center top;
+  }
+  @keyframes dealIn {
+    from { opacity: 0; transform: translateY(70px) rotate(-6deg) scale(.85); }
+    to   { opacity: 1; transform: translateY(0) rotate(-1deg) scale(1); }
+  }
+  /* punched holes on the sides, ticket style */
+  #voucher::before, #voucher::after {
+    content: ''; position: absolute; top: 50%; width: 34px; height: 34px; border-radius: 50%;
+    background: #b21f1f; box-shadow: inset 0 3px 8px rgba(0,0,0,.45); transform: translateY(-50%);
+  }
+  #voucher::before { left: -17px; }
+  #voucher::after  { right: -17px; }
+
+  .vTop { text-align: center; border-bottom: 3px dashed #d4a373; padding-bottom: 16px; }
+  .vKicker {
+    font-size: clamp(10px, 2.4vw, 12px); letter-spacing: .32em; text-transform: uppercase;
+    color: #9c6644; font-weight: 700;
+  }
+  .vTitle {
+    font-size: clamp(24px, 5.6vw, 42px); font-weight: 900; line-height: 1.05; margin: 8px 0 6px;
+    background: linear-gradient(135deg, #b21f1f, #e85d04, #ffb703);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 0 rgba(0,0,0,.08));
+  }
+  .vNames { font-size: clamp(15px, 3.2vw, 19px); font-weight: 700; color: #6a040f; }
+  .vSerial {
+    margin-top: 8px; font-size: 11px; letter-spacing: .16em; color: #9c6644;
+    font-family: ui-monospace, Consolas, monospace;
+  }
+
+  .vSection { margin-top: 22px; }
+  .vSectionTitle {
+    font-size: clamp(13px, 2.8vw, 15px); font-weight: 900; letter-spacing: .18em; text-transform: uppercase;
+    color: #6a040f; display: flex; align-items: center; gap: 10px;
+  }
+  .vSectionTitle::after { content: ''; flex: 1; height: 2px; background: repeating-linear-gradient(90deg, #d4a373 0 8px, transparent 8px 14px); }
+
+  .trial {
+    display: flex; gap: 12px; align-items: flex-start; margin-top: 14px;
+    background: rgba(255,255,255,.55); border-left: 5px solid #e85d04; border-radius: 10px;
+    padding: 11px 13px;
+  }
+  .trialBox {
+    flex-shrink: 0; width: 26px; height: 26px; border: 3px solid #6a040f; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; font-size: 17px; line-height: 1;
+    background: #fff;
+  }
+  .trialName { font-weight: 900; font-size: clamp(13px, 2.9vw, 16px); color: #370617; }
+  .trialDesc { font-size: clamp(11.5px, 2.5vw, 13.5px); color: #5a3e2b; margin-top: 3px; line-height: 1.5; }
+  .trialLesson { font-size: clamp(11px, 2.4vw, 12.5px); color: #9c6644; margin-top: 5px; font-style: italic; }
+
+  .vHint {
+    margin-top: 12px; background: linear-gradient(135deg, #023047, #0077b6);
+    color: #e8f7ff; border-radius: 14px; padding: 16px 18px; line-height: 1.65;
+    font-size: clamp(12.5px, 2.7vw, 15px); box-shadow: inset 0 0 0 2px rgba(255,255,255,.18);
+  }
+  .vHint b { color: #90e0ef; }
+  .vHint .riddle { display: block; margin-top: 10px; font-style: italic; color: #caf0f8; }
+
+  .vFine {
+    margin-top: 20px; border-top: 3px dashed #d4a373; padding-top: 14px;
+    font-size: clamp(10px, 2.2vw, 11.5px); color: #7f5539; line-height: 1.7;
+  }
+  .vFine li { margin-left: 18px; }
+
+  .vStub {
+    margin-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    background: #370617; color: #ffd166; border-radius: 12px; padding: 13px 16px; flex-wrap: wrap;
+  }
+  .vStubBig { font-weight: 900; letter-spacing: .1em; font-size: clamp(13px, 3vw, 17px); }
+  .vStubSmall { font-size: clamp(10px, 2.2vw, 12px); color: #ffb703; font-family: ui-monospace, Consolas, monospace; }
+
+  .vStamp {
+    position: absolute; right: clamp(8px, 3vw, 26px); bottom: clamp(4px, 2vw, 14px);
+    width: clamp(92px, 20vw, 132px); height: clamp(92px, 20vw, 132px); border-radius: 50%;
+    border: 4px double #c1121f; color: #c1121f; transform: rotate(-16deg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    font-weight: 900; letter-spacing: .08em; opacity: .78; pointer-events: none;
+    font-size: clamp(9px, 2vw, 12px); line-height: 1.25; background: rgba(255,255,255,.35);
+  }
 </style>
 </head>
 <body>
@@ -193,15 +293,104 @@
   <p id="wrongSub"></p>
 </div>
 
-<!-- STAGE 3: CONGRATS -->
+<!-- STAGE 3: CONGRATS + VOUCHER -->
 <div class="stage" id="congratsStage">
-  <div id="congratsText">Congratulations Iba and Saalim!<br>We are so happy for you! 💕</div>
+  <div id="congratsInner">
+    <div id="congratsText">Congratulations Iba and Saalim!<br>We are so happy for you! 💕</div>
+    <div id="scrollNudge">↓ scroll down, your voucher awaits ↓</div>
+
+    <div id="voucher">
+      <div class="vTop">
+        <div class="vKicker">Non-transferable · Absolutely Legally Binding*</div>
+        <div class="vTitle">🎟️ THE VOUCHER OF<br>ETERNAL DESSERT</div>
+        <div class="vNames">Issued to: IBA &amp; SAALIM 💍</div>
+        <div class="vSerial">SERIAL No. CGKQ-2026-💘 · ISSUED: OPERATION FANKAA HQ</div>
+      </div>
+
+      <div class="vSection">
+        <div class="vSectionTitle">The Four Trials of Love</div>
+
+        <div class="trial">
+          <div class="trialBox">☐</div>
+          <div>
+            <div class="trialName">I. THE TRIAL OF FEAR</div>
+            <div class="trialDesc">Both tied to chairs. Saalim must identify each close-up face: random Maldivian politician, or wedding guest? Every wrong answer earns Iba a Boku no Baburu jumpscare.</div>
+            <div class="trialLesson">Lesson: Saalim must conquer his greatest weakness (naming literally anybody), and Iba must trust he has her best interests at heart.</div>
+          </div>
+        </div>
+
+        <div class="trial">
+          <div class="trialBox">☐</div>
+          <div>
+            <div class="trialName">II. THE TRIAL OF SQUIGALHEY 🧩</div>
+            <div class="trialDesc">A blindfold, restraints (not like that y'all 🤪), and a maze. One is blinded, the other's hands are tied behind their back. The sighted one must talk their partner through to the end.</div>
+            <div class="trialLesson">Lesson: you must know how to communicate with your partner effectively.</div>
+          </div>
+        </div>
+
+        <div class="trial">
+          <div class="trialBox">☐</div>
+          <div>
+            <div class="trialName">III. THE TRIAL OF POISON ☠️</div>
+            <div class="trialDesc">Four glasses. Iba may taste all four, but drinks only one — Saalim must drink the rest. One glass is cold tom yam, i.e. shellfish, i.e. a bad evening for Saalim. Choose wisely.👹</div>
+            <div class="trialLesson">Lesson: ALWAYS be cognizant of your partner's allergies! Meeru hen heevanyaa they WILL want a taste. Also, Iba must learn to make a decision.</div>
+          </div>
+        </div>
+
+        <div class="trial">
+          <div class="trialBox">☐</div>
+          <div>
+            <div class="trialName">IV. THE TRIAL OF THE GAUNTLET 🏃‍♀️🏃</div>
+            <div class="trialDesc">Arms tied together, one obstacle course, no separating.</div>
+            <div class="trialLesson">Lesson: never see your partner as a burden. You are a team, and only together do you finish.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="vSection">
+        <div class="vSectionTitle">What Awaits The Victors</div>
+        <div class="vHint">
+          Survive all four and this voucher may be redeemed for <b>one (1) mystery prize</b> — no receipt, no returns, no regrets.
+          <span class="riddle">
+            It is <b>cool</b> under pressure. It works in near <b>silence</b>, strikes at dessert o'clock, and <b>churns</b> out more flavours than Saalim can name faces.<br>
+            It will make your kitchen the <b>coldest</b> place in Malé — and after the tom yam incident, Saalim deserves something <b>sweet</b> and <b>creamy</b> that definitely will not kill him.<br>
+            Some couples get cold feet. You two are getting something much, much colder. 🍨
+          </span>
+        </div>
+      </div>
+
+      <div class="vFine">
+        <b>TERMS &amp; CONDITIONS:</b>
+        <ul>
+          <li>Voucher valid only upon completion of all four trials. Partial credit is for cowards.</li>
+          <li>Bribing the judges is encouraged but will not work.</li>
+          <li>Prize may cause spontaneous dessert-based arguments over the last scoop. Resolve them lovingly.</li>
+          <li>Saalim's shellfish allergy is not a bit. Please respect the shellfish allergy.</li>
+          <li>*Not actually legally binding. Emotionally binding, however: extremely.</li>
+        </ul>
+      </div>
+
+      <div class="vStub">
+        <div class="vStubBig">🎁 ADMIT TWO — ONE MARRIAGE</div>
+        <div class="vStubSmall">|| ||| |||| || ||||| || ||| ||</div>
+      </div>
+
+      <div class="vStamp">REDEEM<br>AFTER<br>THE 4<br>TRIALS</div>
+    </div>
+  </div>
+
+  <audio id="audio3" src="bully-in-the-alley.mp3" preload="auto" loop></audio>
+  <div class="controls" id="audio3Controls">
+    <button class="ctrlBtn" id="cPlayPause">⏸</button>
+    <input type="range" class="seek" id="cSeek" min="0" max="100" step="0.1" value="0">
+    <span class="time" id="cTime">0:00 / 0:00</span>
+  </div>
 </div>
 <canvas id="confettiCanvas"></canvas>
 
 <script>
 (function () {
-  var PASSWORD = 'Ibaalim';
+  var PASSWORD = 'CGKQ';
 
   /* Googly Eye positions */
   var EYES = {
@@ -214,7 +403,7 @@
   var STICKER_FACE_Y = 0.28;   /* fraction of sticker height from its top */
 
   var $ = function (id) { return document.getElementById(id); };
-  var video = $('video'), audio = $('audio');
+  var video = $('video'), audio = $('audio'), audio3 = $('audio3');
   var videoStage = $('videoStage'), picStage = $('picStage'), congratsStage = $('congratsStage');
 
   /* ---------- helpers ---------- */
@@ -234,6 +423,7 @@
     }
     stageEl.addEventListener('mousemove', show);
     stageEl.addEventListener('touchstart', show, { passive: true });
+    stageEl.addEventListener('scroll', show, { passive: true });
     stageEl.addEventListener('click', show);
     bar.addEventListener('mousemove', show);
     return show;
@@ -400,6 +590,10 @@
   sticker.addEventListener('pointerup', endDrag);
   sticker.addEventListener('pointercancel', endDrag);
 
+  /* ---------- STAGE 3 ---------- */
+  var showCongratsBar = autoHide($('audio3Controls'), congratsStage);
+  wireMedia(audio3, $('cPlayPause'), $('cSeek'), $('cTime'));
+
   /* ---------- PASSWORD ---------- */
   var wrongMsgs = [
     "That's not it, Sherlock!",
@@ -414,6 +608,8 @@
       audio.pause();
       picStage.classList.remove('active');
       congratsStage.classList.add('active');
+      audio3.play().catch(function () {});
+      showCongratsBar();
       startConfetti();
     } else {
       var pop = $('wrongPopup');
